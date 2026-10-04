@@ -19,7 +19,7 @@ const THEMES = {
   emas: ['Karbon emas', '#0c0c0c', () => [L('carbon', '#ffffff', .07, 50, 50, 1300, 0), L('glow', '#d6a93a', .25, 50, 0, 800, 0), L('kerb', '#d6a93a', .5, 50, 97, 1080, 0)]]
 };
 function defaults() {
-  const t = (name, c1, c2, c3, pts, move) => ({ id: uid(), name, logo: null, logoScale: 100, ns: 100, c1, c2, c3, c4: c3, pts, move });
+  const t = (name, c1, c2, c3, pts, move) => ({ id: uid(), name, logo: null, logoScale: 100, lx: 0, ns: 100, c1, c2, c3, c4: c3, pts, move });
   return {
     ver: 1, title: 'SEASON 2 TEAM\nSTANDINGS', lead: 'Points After The', event: 'DUBAI GP', nextLabel: 'NEXT STOP:', nextCountry: 'ITALY',
     flagEvent: { code: 'ae', img: null }, flagNext: { code: 'it', img: null },
@@ -51,7 +51,7 @@ function save() { clearTimeout(saveT); saveT = setTimeout(async () => { try { co
 function normState(v) {
   const st = Object.assign(defaults(), v), d = defaults();
   st.st = Object.assign({}, d.st, v.st); st.fontMap = Object.assign({}, d.fontMap, v.fontMap); st.titleCfg = Object.assign({}, d.titleCfg, v.titleCfg);
-  st.teams.forEach(t => { if (t.c4 == null) t.c4 = t.c3; if (t.ns == null) t.ns = 100; if (t.logoScale == null) t.logoScale = 100; });
+  st.teams.forEach(t => { if (t.c4 == null) t.c4 = t.c3; if (t.ns == null) t.ns = 100; if (t.lx == null) t.lx = 0; if (t.logoScale == null) t.logoScale = 100; });
   return st;
 }
 async function load() {
@@ -150,7 +150,7 @@ function draw() {
       if (st.ptsBg !== 'row') { g.fillStyle = st.ptsBg === 'dark' ? 'rgba(0,0,0,.4)' : 'rgba(255,255,255,.2)'; rr(PX, y, PW, h, [0, a, b, 0]); g.fill(); }
       g.textBaseline = 'middle';
       const lbw = h, lx = X0 + 24 + lbw / 2, tl = img(t.logo), k = st.logoSize / 100 * t.logoScale / 100;
-      if (tl) { const bw = lbw * k, bh = h * .72 * k, cw = 24 + lbw + 10; g.save(); rr(X0, y, cw, h, [a, 0, 0, b]); g.clip(); contain(tl, lx - bw / 2, cy - bh / 2, bw, bh); g.restore(); }
+      if (tl) { const bw = lbw * k, bh = h * .72 * k, cw = 24 + lbw + 10; g.save(); rr(X0, y, cw, h, [a, 0, 0, b]); g.clip(); contain(tl, lx - bw / 2 + (t.lx || 0), cy - bh / 2, bw, bh); g.restore(); }
       else { g.fillStyle = t.c3; g.textAlign = 'center'; g.font = `${h * .34}px "${FNT('name')}"`; g.fillText((t.name || '').slice(0, 3).toUpperCase(), lx, cy + 2); }
       const nx = X0 + 24 + lbw + 22; g.textAlign = 'left';
       fit((t.name || '').toUpperCase(), (hasM ? MX : PX) - 18 - nx, h * .42 * t.ns / 100 * st.nameScale / 100, FNT('name')); g.fillStyle = gold ? '#e6c76e' : t.c3; g.fillText((t.name || '').toUpperCase(), nx, cy + 2);
@@ -204,7 +204,7 @@ function panelHTML() {
   <div class="card"><h3>Cadangan data</h3><div class="row"><button id="exp">Simpan file data</button><button id="imp">Buka file data</button></div><input id="impf" type="file" accept=".json" hidden></div>`;
   if (tab === 'teams') return `<div class="row"><button class="primary" id="addT">+ Tambah tim</button><button id="sort">Urutkan dari poin</button></div><p class="hint">Urutan kartu = urutan baris di poster (maksimal 12 tim).</p>` + S.teams.map((t, i) => `<div class="card"><div class="row">${thumb(t.logo)}<div>${txt(`teams.${i}.name`, `Posisi ${i + 1} · Nama tim`, t.name)}</div></div>
     <div class="row"><div>${num(`teams.${i}.pts`, 'Poin', t.pts, 0)}</div><div>${num(`teams.${i}.move`, 'Naik (+) / turun (−)', t.move)}</div></div>
-    ${upl(`teams.${i}.logo`, 'Logo tim (PNG transparan paling bagus)')}${rng(`teams.${i}.logoScale`, 'Ukuran logo (%) · di atas 100 terpotong di kotak logo', t.logoScale, 20, 300)}${rng(`teams.${i}.ns`, 'Ukuran nama tim (%)', t.ns, 50, 140)}
+    ${upl(`teams.${i}.logo`, 'Logo tim (PNG transparan paling bagus)')}${rng(`teams.${i}.logoScale`, 'Ukuran logo (%) · di atas 100 terpotong di kotak logo', t.logoScale, 20, 300)}${rng(`teams.${i}.lx`, 'Geser logo kiri–kanan', t.lx || 0, -150, 150)}${rng(`teams.${i}.ns`, 'Ukuran nama tim (%)', t.ns, 50, 140)}
     <div class="row"><div><label>Warna atas</label>${col(`teams.${i}.c1`, t.c1)}</div><div><label>Warna bawah</label>${col(`teams.${i}.c2`, t.c2)}</div><div><label>Nama</label>${col(`teams.${i}.c3`, t.c3)}</div><div><label>Poin</label>${col(`teams.${i}.c4`, t.c4)}</div></div>
     <div class="row" style="margin-top:10px"><button data-mv="${i}:-1">▲ Naik</button><button data-mv="${i}:1">▼ Turun</button><button class="del" data-del="teams.${i}">Hapus</button></div></div>`).join('');
   if (tab === 'style') { const s = S.st; return `<div class="card"><h3>Gaya baris tim</h3>${sel('st.rowStyle', 'Warna baris', s.rowStyle, { v: 'Gradasi atas–bawah', h: 'Gradasi kiri–kanan', flat: 'Warna rata' })}${sel('st.ptsBg', 'Latar kolom poin', s.ptsBg, { row: 'Sama dengan baris', dark: 'Gelap transparan', light: 'Terang transparan' })}${chk('st.goldFirst', 'Juara 1 berwarna emas', s.goldFirst)}
@@ -238,7 +238,7 @@ document.addEventListener('click', async e => {
   if (b.id === 'btnSize') { S.previewSize = ((S.previewSize ?? 1) + 1) % 3; applyPv(); save(); return; }
   if (b.id === 'btnDl') { cv.toBlob(bl => { const a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'team-standings.png'; a.click(); }); return; }
   if (b.id === 'addL') S.layers.push({ id: uid(), type: document.getElementById('ltype').value, color: '#ffffff', op: .2, x: 50, y: 50, size: 400, rot: 0 });
-  else if (b.id === 'addT') S.teams.push({ id: uid(), name: 'Tim Baru', logo: null, logoScale: 100, ns: 100, c1: '#444444', c2: '#1f1f1f', c3: '#ffffff', c4: '#ffffff', pts: 0, move: 0 });
+  else if (b.id === 'addT') S.teams.push({ id: uid(), name: 'Tim Baru', logo: null, logoScale: 100, lx: 0, ns: 100, c1: '#444444', c2: '#1f1f1f', c3: '#ffffff', c4: '#ffffff', pts: 0, move: 0 });
   else if (b.id === 'addLogo') { if (S.logos.length < 3) { const dp = [[15, 8, 260], [90, 5, 200], [50, 95, 200]][S.logos.length]; S.logos.push({ id: uid(), img: null, x: dp[0], y: dp[1], size: dp[2] }); } }
   else if (b.id === 'resetTitle') S.titleCfg = defaults().titleCfg;
   else if (b.id === 'sort') S.teams.sort((a, c) => c.pts - a.pts);
